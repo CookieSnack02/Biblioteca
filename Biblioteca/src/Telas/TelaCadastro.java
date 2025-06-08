@@ -2,12 +2,18 @@ package Telas;
 
 import java.awt.EventQueue;
 
+import java.sql.*;
+
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+
+import conexaoBD.ConexaoBancoDados;
+
 import javax.swing.JTextField;
 import javax.swing.JPasswordField;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.SwingConstants;
 import javax.swing.JButton;
 import java.awt.Font;
@@ -99,7 +105,36 @@ public class TelaCadastro extends JFrame {
 		JButton botaoCadastrar = new JButton("Cadastrar");
 		botaoCadastrar.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				ConexaoBancoDados conexao = new ConexaoBancoDados();
+				String nome = nomeCampo.getText(); 
+				String sobrenome = sobrenomeCampo.getText();
+				String usuario = usuarioCampo.getText();
+				String senha = new String(senhaCampo.getPassword());
+	
+				try {
+					Connection conn = ConexaoBancoDados.createConnectionToMySQL();					
+					String sql = "INSERT INTO usuario(nome, sobrenome, nome_Usuario, senha_Usuario) VALUES (?, ?, ?, ?)";
+					
+					PreparedStatement sts = conn.prepareStatement(sql);
+			        
+					sts.setString(1, nome);
+					sts.setString(2, sobrenome);
+					sts.setString(3, usuario);
+					sts.setString(4, senha);
+					
+					sts.execute();
+					JOptionPane.showMessageDialog(null, "Dados cadastrados com sucesso! ");
+					sts.close();
+					
+					TelaEntrada telaEntrada = new TelaEntrada();
+					telaEntrada.setVisible(true);
+					dispose();
+					
+				}
 				
+				catch(Exception f){
+					JOptionPane.showMessageDialog(null, f);
+				}
 				
 				
 			}

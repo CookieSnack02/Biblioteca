@@ -9,8 +9,8 @@ public class ConexaoBancoDados{
 	private static final String DATA_URL = "jdbc:mysql://localhost:3306/Biblioteca";
 	
 	
-	public static Connection createConnectionToMySQL() throws Exception {
-		Class.forName("com.mysql.cj.jdbc.Driver"); 							//Classe carregada pelo JVM
+	public static Connection createConnectionToMySQL() throws SQLException {
+		 							//Classe carregada pelo JVM
 		
 		Connection conexao = DriverManager.getConnection(DATA_URL, USERNAME, PASSWORD); 
 		
