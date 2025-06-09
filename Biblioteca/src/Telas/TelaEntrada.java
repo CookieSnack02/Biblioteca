@@ -52,7 +52,7 @@ public class TelaEntrada extends JFrame {
 	public TelaEntrada() {
 		setTitle("Tela de Entrada");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(400, 400, 600, 400);
+		setBounds(600, 250, 600, 400);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 

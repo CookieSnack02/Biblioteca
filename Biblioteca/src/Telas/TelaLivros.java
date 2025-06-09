@@ -5,39 +5,34 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.TableColumnModel;
-import java.sql.Connection;
 import conexaoBD.ConexaoBancoDados;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JTextField;
+import javax.swing.JComboBox;
+import javax.swing.JTable;
+import javax.swing.JButton;
+import java.awt.event.ActionListener;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import java.awt.Font;
-import javax.swing.SwingConstants;
-import javax.swing.JTextField;
-import javax.swing.JComboBox;
-import javax.swing.JButton;
-import javax.swing.JTable;
-import java.awt.Color;
-import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.awt.event.ActionEvent;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.awt.Component;
 
 public class TelaLivros extends JFrame {
 
     private static final long serialVersionUID = 1L;
     private JPanel contentPane;
-    private JTextField tituloCampo;
-    private JTable tabelaLivros;
-    private JComboBox<String> autorSelecionar;
-    private JComboBox<String> editoraSelecionar;
-    private final String[] nomeColunas = {"Livro", "Autor", "Editora", "Data Publicação", "Emprestado"};
-    private JButton botaoRegistros;
+    private JTextField textField;
+    private JTable table;
+    private JComboBox<String> comboBoxAutor;
+    private JComboBox<String> comboBoxEditora;
+    private JButton registroBotao;
 
+    /**
+     * Método principal para iniciar a aplicação
+     */
     public static void main(String[] args) {
         EventQueue.invokeLater(new Runnable() {
             public void run() {
@@ -51,322 +46,304 @@ public class TelaLivros extends JFrame {
         });
     }
 
-    
-    
+    /**
+     * Construtor da tela de livros
+     */
     public TelaLivros() {
-        setTitle("Tela de Livros");
+        // Configurações básicas da janela
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setBounds(550, 245, 800, 600);
+        setBounds(600, 300, 750, 550);
         contentPane = new JPanel();
         contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
         setContentPane(contentPane);
         contentPane.setLayout(null);
 
-        criarComponentes(); 	//Criação dos componentes
-        carregarAutores(); 		//Busca banco de dados -> tabela autor
-        carregarEditoras(); 	//Busca banco de dados -> tabela editora
+        // Configuração dos componentes da interface
+        configurarComponentes();
+        
+        // Carrega os dados nos ComboBoxes
+        carregarAutores();
+        carregarEditoras();
     }
-    
-    private void emprestarLivro() {
-        int selectedRow = tabelaLivros.getSelectedRow();
-        
-        if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, 
-                "Selecione um livro na tabela para emprestar",
-                "Aviso", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
 
-        DefaultTableModel model = (DefaultTableModel) tabelaLivros.getModel();
-        String nomeLivro = (String) model.getValueAt(selectedRow, 0);
-        Boolean emprestado = (Boolean) model.getValueAt(selectedRow, 4);
+    /**
+     * Configura todos os componentes da interface gráfica
+     */
+    private void configurarComponentes() {
+        // Label e campo de texto para título
+        JLabel lblTitulo = new JLabel("Titulo");
+        lblTitulo.setBounds(10, 23, 46, 14);
+        contentPane.add(lblTitulo);
         
-        if (emprestado) {
-            JOptionPane.showMessageDialog(this, 
-                "Este livro já está emprestado!",
-                "Aviso", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        int confirm = JOptionPane.showConfirmDialog(this,
-            "Confirmar empréstimo do livro: " + nomeLivro + "?",
-            "Confirmar Empréstimo", JOptionPane.YES_NO_OPTION);
+        textField = new JTextField();
+        textField.setBounds(66, 20, 112, 20);
+        contentPane.add(textField);
+        textField.setColumns(10);
         
-        if (confirm != JOptionPane.YES_OPTION) {
-            return;
-        }
-
-        try (Connection conn = ConexaoBancoDados.createConnectionToMySQL()) {
-            // Atualiza no banco de dados
-            String sql = "UPDATE livro SET emprestado = TRUE WHERE nome_Livro = ?";
-            
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, nomeLivro);
-                int rowsAffected = stmt.executeUpdate();
-                
-                if (rowsAffected > 0) {
-                    // Atualiza na tabela
-                    model.setValueAt(true, selectedRow, 4);
-                    JOptionPane.showMessageDialog(this,
-                        "Livro emprestado com sucesso!",
-                        "Sucesso", JOptionPane.INFORMATION_MESSAGE);
-                }
-            }
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this,
-                "Erro ao atualizar empréstimo: " + ex.getMessage(),
-                "Erro", JOptionPane.ERROR_MESSAGE);
-            ex.printStackTrace();
-        }
-    }
-    
-
-    private void criarComponentes() {
-        JLabel tituloLivro = new JLabel("Título");
-        tituloLivro.setHorizontalAlignment(SwingConstants.CENTER);
-        tituloLivro.setFont(new Font("Tahoma", Font.BOLD, 15));
-        tituloLivro.setBounds(10, 28, 74, 14);
-        contentPane.add(tituloLivro);
+        // ComboBox para autores
+        comboBoxAutor = new JComboBox<>();
+        comboBoxAutor.setBounds(308, 19, 112, 22);
+        comboBoxAutor.addItem("Escolha"); // Item padrão
+        contentPane.add(comboBoxAutor);
         
-        tituloCampo = new JTextField();
-        tituloCampo.setHorizontalAlignment(SwingConstants.CENTER);
-        tituloCampo.setBounds(94, 28, 114, 19);
-        contentPane.add(tituloCampo);
-        tituloCampo.setColumns(10);
+        // ComboBox para editoras
+        comboBoxEditora = new JComboBox<>();
+        comboBoxEditora.setBounds(552, 19, 112, 22);
+        comboBoxEditora.addItem("Escolha"); // Item padrão
+        contentPane.add(comboBoxEditora);
         
-        autorSelecionar = new JComboBox<>();
-        autorSelecionar.setBounds(337, 26, 114, 22);
-        contentPane.add(autorSelecionar);
+        // Labels para os ComboBoxes
+        JLabel lblAutor = new JLabel("Autor");
+        lblAutor.setBounds(251, 23, 46, 14);
+        contentPane.add(lblAutor);
         
-        JLabel autorLivro = new JLabel("Autor");
-        autorLivro.setHorizontalAlignment(SwingConstants.CENTER);
-        autorLivro.setFont(new Font("Tahoma", Font.BOLD, 15));
-        autorLivro.setBounds(253, 30, 74, 14);
-        contentPane.add(autorLivro);
+        JLabel lblEditora = new JLabel("Editora");
+        lblEditora.setBounds(496, 23, 46, 14);
+        contentPane.add(lblEditora);
         
-        JLabel editoraLivro = new JLabel("Editora");
-        editoraLivro.setFont(new Font("Tahoma", Font.BOLD, 15));
-        editoraLivro.setHorizontalAlignment(SwingConstants.CENTER);
-        editoraLivro.setBounds(515, 30, 74, 14);
-        contentPane.add(editoraLivro);
+        // Tabela para exibir os resultados
+        table = new JTable();
+        table.setBounds(10, 96, 714, 367);
+        contentPane.add(table);
         
-        editoraSelecionar = new JComboBox<>();
-        editoraSelecionar.setBounds(599, 26, 114, 22);
-        contentPane.add(editoraSelecionar);
-        
-        JButton botaoBuscar = new JButton("Buscar");
-        botaoBuscar.addActionListener(new ActionListener() {
+        // Botão de busca
+        JButton btnBuscar = new JButton("Buscar");
+        btnBuscar.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 buscarLivros();
             }
         });
-        botaoBuscar.setBackground(new Color(255, 255, 255));
-        botaoBuscar.setFont(new Font("Segoe UI Black", Font.PLAIN, 15));
-        botaoBuscar.setBounds(269, 69, 227, 37);
-        contentPane.add(botaoBuscar);
+        btnBuscar.setBounds(318, 62, 89, 23);
+        contentPane.add(btnBuscar);
         
-        tabelaLivros = new JTable();
-        tabelaLivros.setBounds(10, 125, 764, 381);
-        contentPane.add(tabelaLivros);
-        
-        JButton emprestadoBotao = new JButton("Pegar Emprestado");
-        emprestadoBotao.setBackground(new Color(255, 255, 255));
-        emprestadoBotao.addActionListener(e -> emprestarLivro());
-        emprestadoBotao.setFont(new Font("Segoe UI Black", Font.PLAIN, 15));
-        emprestadoBotao.setBounds(288, 517, 173, 33);
-        contentPane.add(emprestadoBotao);
-        
-        botaoRegistros = new JButton("Registros");
-        botaoRegistros.setBackground(Color.WHITE);
-        botaoRegistros.addActionListener(new ActionListener() {
-        	public void actionPerformed(ActionEvent e) {
-        		TelaRegistro telaRegistro = new TelaRegistro();
-        		telaRegistro.setVisible(true);
-        		dispose();
-        		
-        	}
-        });
-        botaoRegistros.setFont(new Font("Tahoma", Font.BOLD, 13));
-        botaoRegistros.setBounds(640, 524, 114, 23);
-        contentPane.add(botaoRegistros);
-    }
+        // Botão para pegar emprestado (funcionalidade a implementar)
+        JButton btnEmprestimo = new JButton("Pegar Emprestado");
+        btnEmprestimo.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int linhaSelecionada = table.getSelectedRow();
+                
+                if (linhaSelecionada == -1) {
+                    JOptionPane.showMessageDialog(null, "Selecione um livro na tabela!");
+                    return;
+                }
 
-    private void carregarAutores() {
-        try (Connection conn = ConexaoBancoDados.createConnectionToMySQL();
-             PreparedStatement stmt = conn.prepareStatement("SELECT id_Autor, nome_Autor FROM autor ORDER BY nome_Autor");
-             ResultSet rs = stmt.executeQuery()) {
-            
-            autorSelecionar.addItem("Todos");
-            while (rs.next()) {
-                autorSelecionar.addItem(rs.getString("nome_Autor"));
-            }
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Erro ao carregar autores: " + ex.getMessage(), 
-                "Erro", JOptionPane.ERROR_MESSAGE);
-        }
-    }
+                String nomeLivro = table.getValueAt(linhaSelecionada, 0).toString();
+                String nomeAutor = table.getValueAt(linhaSelecionada, 1).toString();
 
-    private void carregarEditoras() {
-        try (Connection conn = ConexaoBancoDados.createConnectionToMySQL();
-             PreparedStatement stmt = conn.prepareStatement("SELECT id_Editora, nome_Editora FROM editora ORDER BY nome_Editora");
-             ResultSet rs = stmt.executeQuery()) {
-            
-            editoraSelecionar.addItem("Todas");
-            while (rs.next()) {
-                editoraSelecionar.addItem(rs.getString("nome_Editora"));
-            }
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Erro ao carregar editoras: " + ex.getMessage(), 
-                "Erro", JOptionPane.ERROR_MESSAGE);
-        }
-    }
+                Connection conexao = null;
+                PreparedStatement stmt = null;
+                ResultSet rs = null;
 
-    private void buscarLivros() {
-        String titulo = tituloCampo.getText().trim();
-        String autor = autorSelecionar.getSelectedItem().toString();
-        String editora = editoraSelecionar.getSelectedItem().toString();
-        
-        if (titulo.isEmpty() && autor.equals("Todos") && editora.equals("Todas")) {
-            JOptionPane.showMessageDialog(this, "Por favor, informe pelo menos um critério de busca.", 
-                "Aviso", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        
-        try (Connection conn = ConexaoBancoDados.createConnectionToMySQL()) {
-            StringBuilder sql = new StringBuilder(
-                "SELECT L.nome_Livro, A.nome_Autor, E.nome_Editora, " +
-                "P.data_Publicacao, L.emprestado " +
-                "FROM livro L " +
-                "JOIN autor A ON L.id_Autor = A.id_Autor " +
-                "JOIN editora E ON L.id_Editora = E.id_Editora " +
-                "JOIN publicacao P ON L.id_Publicacao = P.id_Publicacao " +
-                "WHERE 1=1");
-            
-            if (!titulo.isEmpty()) {
-                sql.append(" AND L.nome_Livro LIKE ?");
-            }
-            if (!autor.equals("Todos")) {
-                sql.append(" AND A.nome_Autor = ?");
-            }
-            if (!editora.equals("Todas")) {
-                sql.append(" AND E.nome_Editora = ?");
-            }
-            sql.append(" ORDER BY L.nome_Livro");
-            
-            PreparedStatement stmt = conn.prepareStatement(sql.toString());
-            
-            int paramIndex = 1;
-            if (!titulo.isEmpty()) {
-                stmt.setString(paramIndex++, "%" + titulo + "%");
-            }
-            if (!autor.equals("Todos")) {
-                stmt.setString(paramIndex++, autor);			//Parâmetro de index
-            }
-            if (!editora.equals("Todas")) {
-                stmt.setString(paramIndex++, editora);
-            }				
-            
-            ResultSet rs = stmt.executeQuery();
-            
-            DefaultTableModel model = new DefaultTableModel() {
-                @Override		//Sobrescrevendo sobre o modelo pré-estabelecido 
-                public Class<?> getColumnClass(int columnIndex) { 		//Tipo genérico
-                    switch(columnIndex) {
-                        case 3: return Date.class;
-                        case 4: return Boolean.class;
-                        default: return String.class;
+                try {
+                    conexao = ConexaoBancoDados.createConnectionToMySQL();
+
+                    // Verifica se o livro está disponível
+                    String sqlVerifica = "SELECT id_Livro, emprestado FROM livro L " +
+                                         "JOIN autor A ON A.id_Autor = L.id_Autor " +
+                                         "WHERE L.nome_Livro = ? AND A.nome_Autor = ?";
+
+                    stmt = conexao.prepareStatement(sqlVerifica);
+                    stmt.setString(1, nomeLivro);
+                    stmt.setString(2, nomeAutor);
+                    rs = stmt.executeQuery();
+
+                    if (rs.next()) {
+                        int idLivro = rs.getInt("id_Livro");
+                        boolean emprestado = rs.getBoolean("emprestado");
+
+                        if (emprestado) {
+                            JOptionPane.showMessageDialog(null, "Este livro já está emprestado!");
+                            return;
+                        }
+
+                        // Atualiza o livro com status, usuário e datas
+                        String sqlAtualiza = "UPDATE livro SET emprestado = true, id_Usuario = ?, " +
+                                             "data_emprestimo = CURDATE(), data_devolucao = DATE_ADD(CURDATE(), INTERVAL 7 DAY) " +
+                                             "WHERE id_Livro = ?";
+                        
+                        try (PreparedStatement stmtAtualiza = conexao.prepareStatement(sqlAtualiza)) {
+                            stmtAtualiza.setInt(1, 1); // ID do usuário que está pegando emprestado
+                            stmtAtualiza.setInt(2, idLivro);
+                            int linhasAfetadas = stmtAtualiza.executeUpdate();
+
+                            if (linhasAfetadas > 0) {
+                                JOptionPane.showMessageDialog(null, "Livro emprestado com sucesso!");
+                                buscarLivros();
+                            } else {
+                                JOptionPane.showMessageDialog(null, "Erro ao emprestar livro!");
+                            }
+                        }
+                    } else {
+                        JOptionPane.showMessageDialog(null, "Livro não encontrado!");
+                    }
+
+                } catch (SQLException ex) {
+                    JOptionPane.showMessageDialog(null, "Erro: " + ex.getMessage());
+                } finally {
+                    try {
+                        if (rs != null) rs.close();
+                        if (stmt != null) stmt.close();
+                        if (conexao != null) conexao.close();
+                    } catch (SQLException ex) {
+                        JOptionPane.showMessageDialog(null, "Erro ao fechar conexão: " + ex.getMessage());
                     }
                 }
-                
-                @Override
-                public boolean isCellEditable(int row, int column) {
-                    return false;
-                }
-            };
+            }
+        });
+
+        btnEmprestimo.setBounds(299, 474, 121, 23);
+        contentPane.add(btnEmprestimo);
+        
+        registroBotao = new JButton("Registros");
+        registroBotao.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+        	TelaRegistros telaRegistros = new TelaRegistros(1);
+        	telaRegistros.setVisible(true);
+        	dispose();
+        	
+        	}
+        });
+        registroBotao.setBounds(615, 474, 89, 23);
+        contentPane.add(registroBotao);
+    }
+
+    /**
+     * Carrega os autores no ComboBox
+     */
+    private void carregarAutores() {
+        Connection conexao = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        
+        try {
+            conexao = ConexaoBancoDados.createConnectionToMySQL();
+            String sql = "SELECT nome_Autor FROM autor ORDER BY nome_Autor";
+            stmt = conexao.prepareStatement(sql);
+            rs = stmt.executeQuery();
             
-            model.addColumn("Livro");
-            model.addColumn("Autor");
-            model.addColumn("Editora");
-            model.addColumn("Publicação");
-            model.addColumn("Emprestado?");
-            
-            int totalResultados = 0;
             while (rs.next()) {
-                totalResultados++;
-                model.addRow(new Object[]{
+                comboBoxAutor.addItem(rs.getString("nome_Autor"));
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, "Erro ao carregar autores: " + ex.getMessage());
+        } finally {
+            try {
+                if (rs != null) rs.close();
+                if (stmt != null) stmt.close();
+                if (conexao != null) conexao.close();
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(null, "Erro ao fechar conexão: " + ex.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Carrega as editoras no ComboBox
+     */
+    private void carregarEditoras() {
+        Connection conexao = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        
+        try {
+            conexao = ConexaoBancoDados.createConnectionToMySQL();
+            String sql = "SELECT nome_Editora FROM editora ORDER BY nome_Editora";
+            stmt = conexao.prepareStatement(sql);
+            rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                comboBoxEditora.addItem(rs.getString("nome_Editora"));
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, "Erro ao carregar editoras: " + ex.getMessage());
+        } finally {
+            try {
+                if (rs != null) rs.close();
+                if (stmt != null) stmt.close();
+                if (conexao != null) conexao.close();
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(null, "Erro ao fechar conexão: " + ex.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Realiza a busca de livros com base nos filtros selecionados
+     */
+    private void buscarLivros() {
+        Connection conexao = null;
+        PreparedStatement sts = null;
+        ResultSet rs = null;
+        
+        try {
+            conexao = ConexaoBancoDados.createConnectionToMySQL();
+            
+            // Construção da query SQL
+            StringBuilder sql = new StringBuilder();
+            sql.append("SELECT L.nome_Livro, A.nome_Autor, E.nome_Editora ")
+               .append("FROM livro L ")
+               .append("JOIN autor A ON A.id_Autor = L.id_Autor ")
+               .append("JOIN editora E ON E.id_Editora = L.id_Editora ")
+               .append("JOIN publicacao P ON P.id_Publicacao = L.id_Publicacao ")
+               .append("WHERE 1=1 ");
+            
+            ArrayList<String> parametros = new ArrayList<>();
+            
+            // Filtro por título
+            if(!textField.getText().trim().isEmpty()) {
+                sql.append("AND L.nome_Livro LIKE ? ");
+                parametros.add("%" + textField.getText().trim() + "%");
+            }
+            
+            // Filtro por autor
+            if(comboBoxAutor.getSelectedItem() != null && !comboBoxAutor.getSelectedItem().equals("Escolha")) {
+                sql.append("AND A.nome_Autor = ? ");
+                parametros.add(comboBoxAutor.getSelectedItem().toString());
+            }
+            
+            // Filtro por editora
+            if(comboBoxEditora.getSelectedItem() != null && !comboBoxEditora.getSelectedItem().equals("Escolha")) {
+                sql.append("AND E.nome_Editora = ? ");
+                parametros.add(comboBoxEditora.getSelectedItem().toString());
+            }
+            
+            // Prepara e executa a query
+            sts = conexao.prepareStatement(sql.toString());
+            
+            for(int i = 0; i < parametros.size(); i++) {
+                sts.setString(i+1, parametros.get(i));
+            }
+            
+            rs = sts.executeQuery();
+            
+            // Configura o modelo da tabela
+            DefaultTableModel model = new DefaultTableModel(
+                new Object[][]{},
+                new String[]{"Título", "Autor", "Editora"}
+            );
+            table.setModel(model);
+            model.setRowCount(0);
+
+            // Preenche a tabela com os resultados
+            while (rs.next()) { 
+                model.addRow(new Object[] {
                     rs.getString("nome_Livro"),
                     rs.getString("nome_Autor"),
-                    rs.getString("nome_Editora"),
-                    rs.getDate("data_Publicacao"),
-                    rs.getBoolean("emprestado")
+                    rs.getString("nome_Editora")
                 });
             }
             
-            tabelaLivros.setModel(model);
-            
-            // Configura renderizadores personalizados
-            tabelaLivros.setDefaultRenderer(Date.class, new DefaultTableCellRenderer() {
-                SimpleDateFormat f = new SimpleDateFormat("dd/MM/yyyy");
-                
-                @Override  //Componente do Swing, formatação padrão
-                public Component getTableCellRendererComponent(JTable table,
-                    Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-                    if (value instanceof Date) {
-                        value = f.format((Date)value);
-                    }
-                    return super.getTableCellRendererComponent(table, value, isSelected, 
-                        hasFocus, row, column);
-                }
-            });
-            
-            tabelaLivros.setDefaultRenderer(Boolean.class, new DefaultTableCellRenderer() { //Renderização da tabela com valores de célula booleana
-                @Override
-                public Component getTableCellRendererComponent(JTable table,
-                    Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-                    if (value instanceof Boolean) {
-                        boolean boolValue = (Boolean) value;
-                    	value = (Boolean)value ? "Sim" : "Não";
-                        
-                        if(boolValue){
-                        	setForeground(Color.RED);
-                        } else {
-                        	setForeground(Color.GREEN);
-                        }
-                        
-                        
-                    }	//superclasse (super)
-                    return super.getTableCellRendererComponent(table, value, isSelected, 
-                        hasFocus, row, column);
-                }
-            });
-            
-            // Ajuste de colunas
-            TableColumnModel columnModel = tabelaLivros.getColumnModel();
-            columnModel.getColumn(0).setPreferredWidth(200);
-            columnModel.getColumn(1).setPreferredWidth(150);
-            columnModel.getColumn(2).setPreferredWidth(150);
-            columnModel.getColumn(3).setPreferredWidth(100);
-            columnModel.getColumn(4).setPreferredWidth(80);
-            
-            if (totalResultados > 0) {
-                JOptionPane.showMessageDialog(this, 
-                    totalResultados + " livro(s) encontrado(s)", 
-                    "Resultado da Busca", 
-                    JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(this, 
-                    "Nenhum livro encontrado com os critérios informados", 
-                    "Resultado da Busca", 
-                    JOptionPane.WARNING_MESSAGE);
+        } catch(SQLException ex) {
+            JOptionPane.showMessageDialog(null, "Erro na busca: " + ex.getMessage());
+        } finally {
+            // Fecha os recursos
+            try {
+                if(rs != null) rs.close();
+                if(sts != null) sts.close();
+                if(conexao != null) conexao.close();
+            } catch(SQLException ex) {
+                JOptionPane.showMessageDialog(null, "Erro ao fechar conexão: " + ex.getMessage());
             }
-            
-            rs.close();
-            stmt.close();
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, 
-                "Erro ao buscar livros: " + ex.getMessage(), 
-                "Erro", JOptionPane.ERROR_MESSAGE);
-            ex.printStackTrace();
         }
     }
 }

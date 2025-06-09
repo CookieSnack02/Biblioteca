@@ -52,7 +52,7 @@ public class TelaCadastro extends JFrame {
 	public TelaCadastro() {
 		setTitle("Tela de Cadastro");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(400, 400, 600, 400); 					//X-axis, Y-axis, weight, height 
+		setBounds(600, 250, 600, 400); 					//X-axis, Y-axis, weight, height 
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 
